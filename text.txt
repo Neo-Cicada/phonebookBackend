@@ -1,0 +1,1 @@
+mongodb+srv://lordneobarnachea:<password>@cluster0.7wdbow5.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0
