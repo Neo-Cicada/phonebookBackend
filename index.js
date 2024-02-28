@@ -18,6 +18,7 @@ const postMorgan = (req, res, next)=> {
 app.use(express.json()); // this 
 app.use(postMorgan)
 app.use(cors())
+app.use(express.static('dist'))
 
 let phoneBook = [ //initilizing dummy data
     { 
