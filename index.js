@@ -1,6 +1,7 @@
 const express = require('express') //import express
 const app = express() // initialized express
 const morgan = require('morgan')
+const cors = require('cors')
 const PORT = 3001 //initilized what port we will use
 //middleware
 morgan.token('req-body', function (req, res) { // this activate a new morgan parameter that return req body
@@ -16,6 +17,7 @@ const postMorgan = (req, res, next)=> {
 
 app.use(express.json()); // this 
 app.use(postMorgan)
+app.use(cors())
 
 let phoneBook = [ //initilizing dummy data
     { 
