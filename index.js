@@ -1,8 +1,10 @@
+require('dotenv').config()
 const express = require('express') //import express
 const app = express() // initialized express
 const morgan = require('morgan')
 const cors = require('cors')
-const PORT = 3001 //initilized what port we will use
+const phoneBook = require('./models/phonebook')
+const PORT = process.env.PORT //initilized what port we will use
 //middleware
 morgan.token('req-body', function (req, res) { // this activate a new morgan parameter that return req body
   return JSON.stringify(req.body);
@@ -20,35 +22,21 @@ app.use(postMorgan)
 app.use(cors())
 app.use(express.static('dist'))
 
-let phoneBook = [ //initilizing dummy data
-    { 
-      "id": 1,
-      "name": "Arto Hellas", 
-      "number": "040-123456"
-    },
-    { 
-      "id": 2,
-      "name": "Ada Lovelace", 
-      "number": "39-44-5323523"
-    },
-    { 
-      "id": 3,
-      "name": "Dan Abramov", 
-      "number": "12-43-234345"
-    },
-    { 
-      "id": 4,
-      "name": "Mary Poppendieck", 
-      "number": "39-23-6423122"
-    }
-]
 
-app.get("/api/persons", (req, res)=>{ // api end point to return all the data
-    res.json(phoneBook)
-})
-app.get("/info", (req, res) =>{
+app.get("/api/persons", (req, res) => {
+  phoneBook.find({})
+    .then(result => {
+      res.json(result)
+    })
+    .catch(err => {
+      console.error("Error:", err);
+      res.status(500).json({ error: 'Internal server error' });
+    });
+});
+app.get("/info", async (req, res) =>{
     const date = new Date()
-    res.send(`Phonebook has info or ${phoneBook.length} people <br/> ${date}`)
+    const collectionLength = await phoneBook.countDocuments();
+    res.send(`Phonebook has info or ${collectionLength} people <br/> ${date}`)
 })
 app.get("/api/persons/:id", (req, res) =>{
     const id = Number(req.params.id)
@@ -69,23 +57,29 @@ app.delete("/api/persons/:id", (req, res)=>{
     phoneBook = phoneBook.filter(item => item.id !== id)
     res.status(204).end() //status response
 })
-app.post("/api/persons", (req, res)=>{
+app.post("/api/persons", async (req, res)=>{
   const {name, number} = req.body;
   const id = Math.floor(Math.random()* 10000)
   if(!name) return res.status(500).json({error: "name is required"})
   
   if(!number) return res.status(500).json({error :"number is required"})
 
-  const duplicate = phoneBook.find(item => item.name.toLowerCase() === name.toLowerCase())
-  if(duplicate) return res.status(500).json({ error: 'name must be unique' });  
+  const duplicate = await phoneBook.aggregate([
+    { $match: { name: { $regex: new RegExp(`^${name}$`, 'i') } } }
+  ]);
 
-  const newPerson ={
-    "id": id,
-    "name": name,
-    "number": number
+  if (duplicate.length > 0) {
+    return res.status(400).json({ error: "Name already exists in the phone book" });
   }
 
-  phoneBook.push(newPerson);
+  const newPerson = new phoneBook({
+    "name": name,
+    "number": number
+  })
+
+  newPerson.save().then(result =>{
+    console.log(result)
+  })
   res.status(200).json(newPerson);
 
 })
