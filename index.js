@@ -38,32 +38,45 @@ app.get("/info", async (req, res) =>{
     const collectionLength = await phoneBook.countDocuments();
     res.send(`Phonebook has info or ${collectionLength} people <br/> ${date}`)
 })
-app.get("/api/persons/:id", (req, res) =>{
-    const id = Number(req.params.id)
-    console.log(id)
-    const person = phoneBook.find(item => item.id == id)
-    console.log(person) 
-    if(person){
-        res.json(person)
-    }else{
-        res.status(404).end()
-    }
-    
+app.get("/api/persons/:id", async (req, res) =>{
+    const id = req.params.id
+    const foundIt = await phoneBook.findById(id)
+    const {name, number, _id} = foundIt
+
+    res.status(201).json(foundIt)
 })
-app.delete("/api/persons/:id", (req, res)=>{
-    const id = Number(req.params.id)
-    //logic here
+const errorHandler = (error, request, response, next) => {
+  console.error(error.message)
+
+  if (error.name === 'CastError') {
+    return response.status(400).send({ error: 'malformatted id' })
+  }
+  response.status(404).send({error: 'id not found'}) 
+
+  next(error)
+}
+
+
+app.delete("/api/persons/:id", (req, res, next)=>{
+    const id = req.params.id
     console.log(id)
-    phoneBook = phoneBook.filter(item => item.id !== id)
-    res.status(204).end() //status response
+    phonebook.findByIdAndDelete(id).then(response =>{
+      if (response) {
+        res.status(204).end()
+        console.log("success!")
+      }else{
+        throw Error
+      }
+    }).catch(error => next(error))
 })
+app.use(errorHandler)
+
 app.post("/api/persons", async (req, res)=>{
   const {name, number} = req.body;
   const id = Math.floor(Math.random()* 10000)
   if(!name) return res.status(500).json({error: "name is required"})
   
   if(!number) return res.status(500).json({error :"number is required"})
-
   const duplicate = await phoneBook.aggregate([
     { $match: { name: { $regex: new RegExp(`^${name}$`, 'i') } } }
   ]);
@@ -71,7 +84,7 @@ app.post("/api/persons", async (req, res)=>{
   if (duplicate.length > 0) {
     return res.status(400).json({ error: "Name already exists in the phone book" });
   }
-
+  
   const newPerson = new phoneBook({
     "name": name,
     "number": number
@@ -83,6 +96,20 @@ app.post("/api/persons", async (req, res)=>{
   res.status(200).json(newPerson);
 
 })
+
+app.put("/api/persons", async (req, res) =>{
+  const reqName = req.body.name
+  console.log(reqName)
+  const existingPerson = await phoneBook.exists({name: reqName})
+  console.log(existingPerson)
+  if(existingPerson){
+    await phoneBook.findOneAndUpdate({name: reqName}, {number: `${req.body.number}`})
+    console.log("updated?")
+  }
+  res.status(204).end()
+
+})
+
 app.listen(PORT, ()=>{
     console.log(`Server running on port ${PORT}`)
 })
