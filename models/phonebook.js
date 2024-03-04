@@ -4,7 +4,7 @@ mongoose.set('strictQuery', false) // set strict query to false
 
 const url = process.env.MONGODB_URL // get the url from env
 
-mongoose.connect(url).then(result =>{ // connect db
+mongoose.connect(url).then(() =>{ // connect db
     console.log('connected to DB')
 }).catch(error =>{
     console.log("error connecting to db", error.message)

@@ -6,7 +6,7 @@ const cors = require('cors')
 const phoneBook = require('./models/phonebook')
 const PORT = process.env.PORT //initilized what port we will use
 //middleware
-morgan.token('req-body', function (req, res) { // this activate a new morgan parameter that return req body
+morgan.token('req-body', function (req) { // this activate a new morgan parameter that return req body
   return JSON.stringify(req.body);
 });
 const postMorgan = (req, res, next)=> {
@@ -41,7 +41,6 @@ app.get("/info", async (req, res) =>{
 app.get("/api/persons/:id", async (req, res) =>{
     const id = req.params.id
     const foundIt = await phoneBook.findById(id)
-    const {name, number, _id} = foundIt
 
     res.status(201).json(foundIt)
 })
@@ -60,7 +59,7 @@ const errorHandler = (error, request, response, next) => {
 app.delete("/api/persons/:id", (req, res, next)=>{
     const id = req.params.id
     console.log(id)
-    phonebook.findByIdAndDelete(id).then(response =>{
+    phoneBook.findByIdAndDelete(id).then(response =>{
       if (response) {
         res.status(204).end()
         console.log("success!")
@@ -73,7 +72,6 @@ app.use(errorHandler)
 
 app.post("/api/persons", async (req, res)=>{
   const {name, number} = req.body;
-  const id = Math.floor(Math.random()* 10000)
   if(!name) return res.status(500).json({error: "name is required"})
   
   if(!number) return res.status(500).json({error :"number is required"})
