@@ -85,16 +85,17 @@ app.post("/api/persons", async (req, res)=>{
     return res.status(400).json({ error: "Name already exists in the phone book" });
   }
   
-  const newPerson = new phoneBook({
+  const newPerson ={
     "name": name,
     "number": number
-  })
+  }
 
-  newPerson.save().then(result =>{
-    console.log(result)
-  })
-  res.status(200).json(newPerson);
-
+  try {
+    const createdPerson = await phoneBook.create(newPerson);
+    res.status(200).json(createdPerson);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
 })
 
 app.put("/api/persons", async (req, res) =>{

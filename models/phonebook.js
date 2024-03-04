@@ -11,8 +11,28 @@ mongoose.connect(url).then(result =>{ // connect db
 })
 
 const personSchema = new mongoose.Schema({ // create a schema or blueprint for datas
-    name: String,
-    number: String,
+    name: {
+      type: String,
+      required: true,
+      validate: {
+        validator: function(value) {
+            return value.length >= 3;
+        },
+        message: props => `${props.value} is shorter than the minimum allowed length (3).`
+    }
+      },
+      number: {
+        type: String,
+        required: true,
+        validate: {
+            validator: function(value) {
+                // Regular expression to match the specified format
+                const regex = /^\d{2,3}-\d+$/;
+                return regex.test(value);
+            },
+            message: props => `${props.value} is not in the correct format. It should be in the format XX-XXXXXXX, where X represents a digit.`
+        }
+    },
 })
 
 personSchema.set('toJSON', {
